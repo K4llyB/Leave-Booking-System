@@ -1,4 +1,3 @@
-// src/pages/RequestsList.tsx
 import { useEffect, useState } from "react";
 import { api } from "../api";
 
@@ -12,6 +11,13 @@ type Leave = {
 };
 
 export default function RequestsList() {
+  // --- one-time success banner after login ---
+  const [flash, setFlash] = useState<string | null>(sessionStorage.getItem("flash"));
+  useEffect(() => {
+    if (flash) sessionStorage.removeItem("flash"); // clear it so it doesn't show again on refresh
+  }, [flash]);
+
+  // --- data/loading/error state ---
   const [rows, setRows] = useState<Leave[]>([]);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -20,11 +26,12 @@ export default function RequestsList() {
   async function load() {
     setErr(null);
     try {
+      // list requests
       const list = await api.listLeave();
       const arr: Leave[] = Array.isArray(list) ? list : ((list as any).data ?? []);
       setRows(arr);
 
-      // Try to show remaining leave using the first request's employee_id (if any)
+      // remaining-leave lookup 
       const firstId = arr[0]?.employee_id;
       if (firstId != null) {
         const r = await api.remainingFor(firstId);
@@ -58,6 +65,15 @@ export default function RequestsList() {
     <div className="space-y-3">
       <h1 className="text-2xl font-semibold">My leave requests</h1>
 
+      {/* success banner shown once after login */}
+      {flash === "signed-in" && (
+        <div className="p-3 rounded border bg-green-50 text-green-800" role="status" aria-live="polite">
+          Signed in successfully.
+          <button className="ml-3 underline" onClick={() => setFlash(null)}>dismiss</button>
+        </div>
+      )}
+
+      {/* small remaining-leave widget (optional) */}
       {remaining != null && (
         <div className="border rounded p-3 bg-gray-50" role="status" aria-live="polite">
           <p className="font-medium">Remaining leave: {remaining} days</p>

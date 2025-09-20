@@ -1,7 +1,7 @@
+import { useAuth } from "../auth";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth";
 
 export default function Login() {
   const nav = useNavigate();
@@ -12,10 +12,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
-    e.preventDefault(); setErr(null); setLoading(true);
-    try { await login(email, password); nav("/requests"); }
-    catch (e: any) { setErr(e.message || "Login failed"); }
-    finally { setLoading(false); }
+    e.preventDefault();
+    setErr(null); setLoading(true);
+    try {
+      await login(email, password);
+      sessionStorage.setItem("flash", "signed-in");  
+      nav("/requests");
+    } catch (e: any) {
+      setErr(e.message || "Login failed");
+    } finally { setLoading(false); }
   };
 
   return (

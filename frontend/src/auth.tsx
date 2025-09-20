@@ -35,19 +35,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(decodeJwt(token));
   };
 
-  const logout = () => { sessionStorage.clear(); setToken(null); setUser(null); };
+  const logout = () => {
+    sessionStorage.clear();
+    setToken(null);
+    setUser(null);
+    location.assign("/"); // hard refresh back to home
+  };
 
   const hasRole = (roles: Role | Role[]) => {
     const r = Array.isArray(roles) ? roles : [roles];
-    if (!user?.role) return false;
-    return r.includes(user.role);
+    return !!user?.role && r.includes(user.role);
   };
 
-  const getEmployeeId = () => {
-    if (!user) return null;
-    // payload might use employee_id or id
-    return (user.employee_id as number) ?? (user.id as number) ?? null;
-  };
+  const getEmployeeId = () => (user?.employee_id as number) ?? (user?.id as number) ?? null;
 
   const value = useMemo(() => ({ token, user, login, logout, hasRole, getEmployeeId }), [token, user]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
