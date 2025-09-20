@@ -4,6 +4,19 @@ import { StatusCodes } from "http-status-codes";
 import { RoleRouter } from "./routes/RoleRouter";
 import { UserRouter } from "./routes/UserRouter";
 import { LoginRouter } from "./routes/LoginRouter";
+import cors from "cors";
+
+export const app = express();
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+app.use(express.json());
+
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 
 
@@ -19,8 +32,13 @@ export class Server {
   }
 
   private initialiseMiddlewares() {
-    this.app.use(express.json());
-  }
+  this.app.use(cors({
+    origin: "http://localhost:5173",
+    methods: ["GET","POST","PATCH","DELETE","OPTIONS"],
+    allowedHeaders: ["Content-Type","Authorization"],
+  }));
+  this.app.use(express.json());
+}
 
   private initialiseRoutes(): void {
     this.app.use("/api", this.myRouter.getRouter());

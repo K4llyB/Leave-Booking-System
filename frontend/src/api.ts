@@ -1,4 +1,5 @@
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8900/api";
+console.log("API BASE =", BASE);
 
 async function req<T>(path: string, init: RequestInit = {}) {
   const token = sessionStorage.getItem("token");
