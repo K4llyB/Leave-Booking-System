@@ -1,0 +1,19 @@
+# Node / build output
+node_modules/
+dist/
+build/
+.vite/
+.cache/
+coverage/
+*.log
+
+# env files (keep secrets out of git)
+.env
+.env.*.local
+*.local
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
