@@ -40,13 +40,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(() => (token ? decodeJwt(token) : null));
 
   const login = async (email: string, password: string) => {
-    const { token } = await api.login(email, password);
-    sessionStorage.setItem("token", token);
-    setToken(token);
-    const payload = decodeJwt(token);
-    console.log("[auth] jwt payload:", payload); // helpful while testing
-    setUser(payload);
-  };
+  const { token } = await api.login(email, password);
+  sessionStorage.setItem("token", token);
+  setToken(token);
+  const payload = decodeJwt(token);
+  setUser(payload);
+
+  const expMs = (payload?.exp ? payload.exp * 1000 : Date.now() + 60 * 60 * 1000);
+  const timeout = Math.max(0, expMs - Date.now());
+  window.clearTimeout((window as any).__logoutTimer);
+  (window as any).__logoutTimer = window.setTimeout(() => {
+    sessionStorage.setItem("flash", "session-expired");
+    sessionStorage.removeItem("token");
+    location.assign("/login");
+  }, timeout);
+};
+
 
   const logout = () => {
     sessionStorage.clear();

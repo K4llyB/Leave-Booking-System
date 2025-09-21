@@ -18,3 +18,15 @@ body { background: var(--bt-paper); color: var(--bt-ink); }
 /* sensible defaults */
 * { box-sizing: border-box; }
 :focus { outline: 2px solid; outline-offset: 2px; }
+:focus-visible { outline: 3px solid #111; outline-offset: 2px; }
+a { text-decoration: underline; text-underline-offset: 2px; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

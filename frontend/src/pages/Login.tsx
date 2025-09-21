@@ -1,6 +1,6 @@
 import { useAuth } from "../auth";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 
 export default function Login() {
@@ -10,6 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -22,6 +23,9 @@ export default function Login() {
       setErr(e.message || "Login failed");
     } finally { setLoading(false); }
   };
+
+  const expired = sessionStorage.getItem("flash") === "session-expired";
+useEffect(() => { if (expired) sessionStorage.removeItem("flash"); }, [expired]);
 
    return (
     <div className="max-w-lg mx-auto">
