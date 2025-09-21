@@ -21,7 +21,7 @@ export default function ManageRequests() {
     setErr(null);
     setLoading(true);
     try {
-      const data = await api.listLeave();
+      const data = await api.listAllLeave();
       const arr: Leave[] = Array.isArray(data) ? data : ((data as any).data ?? []);
       setRows(arr);
     } catch (e: any) {

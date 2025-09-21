@@ -49,17 +49,42 @@ export class LeaveRequestController {
 public approveLeaveRequest = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { leave_request_id } = req.body;
+    if (!leave_request_id) {
+      res.status(StatusCodes.BAD_REQUEST).json({ error: "leave_request_id required" });
+      return;
+    }
 
-    const repo = AppDataSource.getRepository(LeaveRequest);
-    const requestToUpdate = await repo.findOneBy({ id: leave_request_id });
+    const leaveRepo = AppDataSource.getRepository(LeaveRequest);
+    const userRepo  = AppDataSource.getRepository(User);
 
-    if (!requestToUpdate) {
+    const leave = await leaveRepo.findOneBy({ id: leave_request_id });
+    if (!leave) {
       res.status(StatusCodes.NOT_FOUND).json({ error: "Leave request not found" });
       return;
     }
 
-    requestToUpdate.status = "Approved";
-    const saved = await repo.save(requestToUpdate);
+    // Idempotency: if already approved, don’t deduct again
+    if (leave.status === "Approved") {
+      res.status(StatusCodes.OK).json({ message: "Already approved", data: leave });
+      return;
+    }
+
+    // Inclusive day count 
+    const days = Math.ceil(
+      (new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24) + 1
+    );
+
+    const user = await userRepo.findOneBy({ id: leave.employee_id });
+    if (!user) {
+      res.status(StatusCodes.NOT_FOUND).json({ error: "User not found" });
+      return;
+    }
+
+    user.remaining_leave_days = Math.max(0, (user.remaining_leave_days ?? 0) - days);
+    await userRepo.save(user);
+
+    leave.status = "Approved";
+    const saved = await leaveRepo.save(leave);
 
     res.status(StatusCodes.OK).json({
       message: "Leave request approved successfully",
@@ -70,20 +95,38 @@ public approveLeaveRequest = async (req: AuthenticatedRequest, res: Response): P
   }
 };
 
+
 public rejectLeaveRequest = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { leave_request_id } = req.body;
+    if (!leave_request_id) {
+      res.status(StatusCodes.BAD_REQUEST).json({ error: "leave_request_id required" });
+      return;
+    }
 
-    const repo = AppDataSource.getRepository(LeaveRequest);
-    const requestToUpdate = await repo.findOneBy({ id: leave_request_id });
+    const leaveRepo = AppDataSource.getRepository(LeaveRequest);
+    const userRepo  = AppDataSource.getRepository(User);
 
-    if (!requestToUpdate) {
+    const leave = await leaveRepo.findOneBy({ id: leave_request_id });
+    if (!leave) {
       res.status(StatusCodes.NOT_FOUND).json({ error: "Leave request not found" });
       return;
     }
 
-    requestToUpdate.status = "Rejected";
-    const saved = await repo.save(requestToUpdate);
+    // If it was Approved, put days back (symmetry with cancel logic)
+    if (leave.status === "Approved") {
+      const user = await userRepo.findOneBy({ id: leave.employee_id });
+      if (user) {
+        const days = Math.ceil(
+          (new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24) + 1
+        );
+        user.remaining_leave_days += days;
+        await userRepo.save(user);
+      }
+    }
+
+    leave.status = "Rejected";
+    const saved = await leaveRepo.save(leave);
 
     res.status(StatusCodes.OK).json({
       message: "Leave request rejected successfully",
@@ -93,6 +136,7 @@ public rejectLeaveRequest = async (req: AuthenticatedRequest, res: Response): Pr
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: err.message });
   }
 };
+
 
 public cancelLeaveRequest = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {

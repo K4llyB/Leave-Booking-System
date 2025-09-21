@@ -1,7 +1,8 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { useAuth } from "../auth";
+import { toIsoDateOut } from "../date";
 
 export default function RequestForm() {
   const nav = useNavigate();
@@ -10,17 +11,29 @@ export default function RequestForm() {
   const [reason, setReason] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { getEmployeeId } = useAuth();
+  
+  const onSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setErr(null); setLoading(true);
+  try {
+    const me = getEmployeeId();
+    if (me == null) throw new Error("Your employee id was not found. Please log out and in again.");
+    const payload = {
+      employee_id: Number(me),
+      start_date: toIsoDateOut(start),
+      end_date: toIsoDateOut(end),
+      ...(reason ? { reason } : {}),
+    };
+    await api.createLeave(payload);
+    nav("/requests");
+  } catch (e: any) {
+    setErr(e.message || "Failed to submit");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!employeeId) return setErr("Employee ID required");
-    setErr(null); setLoading(true);
-    try {
-      await api.createLeave({ employee_id: Number(employeeId), start_date: start, end_date: end, reason });
-      nav("/requests");
-    } catch (e: any) { setErr(e.message || "Failed to submit"); }
-    finally { setLoading(false); }
-  };
 
   return (
     <div className="max-w-lg">

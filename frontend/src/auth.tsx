@@ -2,7 +2,7 @@ import React, { createContext, useContext, useMemo, useState } from "react";
 import { api } from "./api";
 
 type Role = "staff" | "manager" | "admin";
-type User = { id?: number; employee_id?: number; email?: string; role?: Role };
+type User = { id?: number; employee_id?: number; email?: string; role?: Role; [k: string]: any };
 
 type AuthCtx = {
   token: string | null;
@@ -24,6 +24,17 @@ function decodeJwt(token: string): any {
   }
 }
 
+// pull a numeric id out of common payload keys
+function extractEmployeeId(obj: any): number | null {
+  const keys = ["employee_id", "employeeId", "id", "user_id", "userId"];
+  for (const k of keys) {
+    const v = obj?.[k];
+    const n = typeof v === "string" ? parseInt(v, 10) : (typeof v === "number" ? v : NaN);
+    if (!Number.isNaN(n)) return n;
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(sessionStorage.getItem("token"));
   const [user, setUser] = useState<User | null>(() => (token ? decodeJwt(token) : null));
@@ -32,14 +43,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { token } = await api.login(email, password);
     sessionStorage.setItem("token", token);
     setToken(token);
-    setUser(decodeJwt(token));
+    const payload = decodeJwt(token);
+    console.log("[auth] jwt payload:", payload); // helpful while testing
+    setUser(payload);
   };
 
   const logout = () => {
     sessionStorage.clear();
     setToken(null);
     setUser(null);
-    location.assign("/"); // hard refresh back to home
+    location.assign("/");
   };
 
   const hasRole = (roles: Role | Role[]) => {
@@ -47,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return !!user?.role && r.includes(user.role);
   };
 
-  const getEmployeeId = () => (user?.employee_id as number) ?? (user?.id as number) ?? null;
+  const getEmployeeId = () => extractEmployeeId(user || {});
 
   const value = useMemo(() => ({ token, user, login, logout, hasRole, getEmployeeId }), [token, user]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

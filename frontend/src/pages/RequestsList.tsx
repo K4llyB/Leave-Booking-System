@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { pick, fmtDate } from "../date";
-
+import { useAuth } from "../auth";
 
 type Leave = {
   id: number;
@@ -24,29 +24,40 @@ export default function RequestsList() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const { getEmployeeId } = useAuth();
+  
+  // normalize status and detect "pending"-like states
+const statusOf = (r: any) => String((r?.status ?? "")).toLowerCase();
+const isPending = (r: any) => ["pending", "awaiting approval", "requested"].includes(statusOf(r));
 
-  async function load() {
-    setErr(null);
-    try {
-      // list requests
-      const list = await api.listLeave();
-      const arr: Leave[] = Array.isArray(list) ? list : ((list as any).data ?? []);
-      setRows(arr);
+// filter state
+const [show, setShow] = useState<"all" | "pending">("all");
 
-      // remaining-leave lookup 
-      const firstId = arr[0]?.employee_id;
-      if (firstId != null) {
-        const r = await api.remainingFor(firstId);
-        setRemaining(r.remaining_leave_days);
-      } else {
-        setRemaining(null);
-      }
-    } catch (e: any) {
-      setErr(e.message || "Failed to load");
-    } finally {
-      setLoading(false);
+// computed rows
+const pendingCount = rows.filter(isPending).length;
+const displayRows = show === "pending" ? rows.filter(isPending) : rows;
+
+ async function load() {
+  setErr(null);
+  try {
+    const me = getEmployeeId();
+    const list = me ? await api.listLeaveForEmployee(me) : [];
+    const arr = Array.isArray(list) ? list : (list as any).data ?? [];
+    setRows(arr);
+    if (me) {
+      const r = await api.remainingFor(me);
+      setRemaining(r.remaining_leave_days);
+    } else {
+      setRemaining(null);
+      console.warn("[requests] no employee id from jwt");
     }
+  } catch (e: any) {
+    setErr(e.message || "Failed to load");
+  } finally {
+    setLoading(false);
   }
+}
+
 
   useEffect(() => { void load(); }, []);
 
@@ -82,6 +93,23 @@ export default function RequestsList() {
         </div>
       )}
 
+      <div className="flex items-center gap-2 mb-3">
+  <button
+    onClick={() => setShow("all")}
+    className={`px-3 py-1 rounded border ${show === "all" ? "bg-gray-200" : "bg-white"}`}
+    aria-pressed={show === "all"}
+  >
+    All <span className="ml-1 text-xs text-gray-600">({rows.length})</span>
+  </button>
+  <button
+    onClick={() => setShow("pending")}
+    className={`px-3 py-1 rounded border ${show === "pending" ? "bg-gray-200" : "bg-white"}`}
+    aria-pressed={show === "pending"}
+  >
+    Pending <span className="ml-1 text-xs text-gray-600">({pendingCount})</span>
+  </button>
+</div>
+
       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
   <div className="overflow-x-auto">
     <table className="min-w-full text-sm">
@@ -95,21 +123,22 @@ export default function RequestsList() {
         </tr>
       </thead>
       <tbody>
-        {rows.map(r => (
+        {displayRows.map(r => (
           <tr key={r.id} className="odd:bg-white even:bg-gray-50 border-t">
             <td className="p-2">{r.id}</td>
             <td className="p-2">{fmtDate(pick(r, ["start_date","startDate","start"]))}</td>
             <td className="p-2">{fmtDate(pick(r, ["end_date","endDate","end"]))}</td>
             <td className="p-2">{r.status ?? "pending"}</td>
             <td className="p-2">
-              {(!r.status || r.status.toLowerCase() !== "approved") && (
-                <button
-                  className="px-2 py-1 rounded bg-gray-200 text-[var(--bt-ink)] hover:bg-gray-300"
-                  onClick={() => cancel(r.id, r.employee_id)}
-                >
-                  Cancel
-                </button>
-              )}
+              {["pending","approved"].includes(String(r.status ?? "pending").toLowerCase()) && (
+  
+  <button
+    className="px-2 py-1 rounded bg-gray-200 text-[var(--bt-ink)] hover:bg-gray-300"
+    onClick={() => cancel(r.id, r.employee_id)}
+  >
+    Cancel
+  </button>
+)}
             </td>
           </tr>
         ))}

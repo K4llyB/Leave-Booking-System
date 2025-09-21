@@ -1,33 +1,83 @@
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8900/api";
-console.log("API BASE =", BASE);
+// src/api.ts
+// Base URL comes from Vite env. Example: VITE_API_URL=http://localhost:8900/api
+const BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8900/api").replace(/\/$/, "");
 
-async function req<T>(path: string, init: RequestInit = {}) {
+async function req<T = any>(path: string, init: RequestInit = {}): Promise<T> {
   const token = sessionStorage.getItem("token");
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(init.headers as any),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE}${path}`, { ...init, headers });
-  const txt = await res.text();
-  const data = txt ? JSON.parse(txt) : null;
-  if (!res.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`);
+  const url = `${BASE}/${String(path).replace(/^\/+/, "")}`;
+  const res = await fetch(url, { ...init, headers });
+
+  const text = await res.text();
+  let data: any = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+  if (!res.ok) {
+    const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
   return data as T;
 }
 
+export type LeavePayload = {
+  employee_id: number;
+  start_date: string; // YYYY-MM-DD
+  end_date: string;   // YYYY-MM-DD
+  reason?: string;
+};
+
+export type LeaveRow = {
+  id: number;
+  employee_id: number;
+  start_date?: any;
+  end_date?: any;
+  status?: string;
+  reason?: string;
+};
+
 export const api = {
+  // Auth
   login: (email: string, password: string) =>
-    req<{ token: string }>("/login", { method: "POST", body: JSON.stringify({ email, password }) }),
-  listLeave: () => req<any[]>("/leave-requests"),
-  createLeave: (payload: { employee_id: number; start_date: string; end_date: string; reason?: string }) =>
-    req<any>("/leave-requests", { method: "POST", body: JSON.stringify(payload) }),
+    req<{ token: string }>("/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  // Lists
+  listLeaveForEmployee: (employeeId: number) =>
+    req<LeaveRow[]>(`/leave-requests/status/${employeeId}`),
+
+  listAllLeave: () =>
+    req<LeaveRow[]>(`/leave-requests`),
+
+  remainingFor: (employeeId: number) =>
+    req<{ remaining_leave_days: number }>(`/leave-requests/remaining/${employeeId}`),
+
+  // Create/Update/Delete
+  createLeave: (payload: LeavePayload) =>
+    req(`/leave-requests`, { method: "POST", body: JSON.stringify(payload) }),
+
   approveLeave: (id: number) =>
-    req<any>("/leave-requests/approve", { method: "PATCH", body: JSON.stringify({ id }) }),
-  rejectLeave: (id: number) =>
-    req<any>("/leave-requests/reject", { method: "PATCH", body: JSON.stringify({ id }) }),
-  cancelLeave: (id: number, employee_id: number) =>
-    req<void>("/leave-requests", { method: "DELETE", body: JSON.stringify({ id, employee_id }) }),
-  remainingFor: (employee_id: number) =>
-    req<{ employee_id: number; remaining_leave_days: number }>(`/leave-requests/remaining/${employee_id}`),
+  req(`/leave-requests/approve`, {
+    method: "PATCH",
+    body: JSON.stringify({ leave_request_id: id }),
+  }),
+
+rejectLeave: (id: number) =>
+  req(`/leave-requests/reject`, {
+    method: "PATCH",
+    body: JSON.stringify({ leave_request_id: id }),
+  }),
+
+cancelLeave: (id: number, employee_id?: number) =>
+  req(`/leave-requests`, {
+    method: "DELETE",
+    body: JSON.stringify({ leave_request_id: id, employee_id }),
+  }),
 };
