@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { pick, fmtDate } from "../date";
+
 
 type Leave = {
   id: number;
@@ -14,7 +16,7 @@ export default function RequestsList() {
   // --- one-time success banner after login ---
   const [flash, setFlash] = useState<string | null>(sessionStorage.getItem("flash"));
   useEffect(() => {
-    if (flash) sessionStorage.removeItem("flash"); // clear it so it doesn't show again on refresh
+    if (flash) sessionStorage.removeItem("flash"); 
   }, [flash]);
 
   // --- data/loading/error state ---
@@ -73,7 +75,7 @@ export default function RequestsList() {
         </div>
       )}
 
-      {/* small remaining-leave widget (optional) */}
+      {/*remaining-leave widget  */}
       {remaining != null && (
         <div className="border rounded p-3 bg-gray-50" role="status" aria-live="polite">
           <p className="font-medium">Remaining leave: {remaining} days</p>
@@ -96,8 +98,8 @@ export default function RequestsList() {
         {rows.map(r => (
           <tr key={r.id} className="odd:bg-white even:bg-gray-50 border-t">
             <td className="p-2">{r.id}</td>
-            <td className="p-2">{new Date(r.start_date).toLocaleDateString()}</td>
-            <td className="p-2">{new Date(r.end_date).toLocaleDateString()}</td>
+            <td className="p-2">{fmtDate(pick(r, ["start_date","startDate","start"]))}</td>
+            <td className="p-2">{fmtDate(pick(r, ["end_date","endDate","end"]))}</td>
             <td className="p-2">{r.status ?? "pending"}</td>
             <td className="p-2">
               {(!r.status || r.status.toLowerCase() !== "approved") && (

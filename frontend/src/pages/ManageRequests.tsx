@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { pick, fmtDate } from "../date";
 
 type Leave = {
   id: number;
@@ -61,7 +62,6 @@ export default function ManageRequests() {
           <p>No requests to manage right now.</p>
         </div>
       ) : (
-        // ===== TABLE WRAPPER (brand-friendly & responsive) =====
         <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -80,8 +80,8 @@ export default function ManageRequests() {
                   <tr key={r.id} className="odd:bg-white even:bg-gray-50 border-t">
                     <td className="p-2">{r.id}</td>
                     <td className="p-2">{r.employee_id}</td>
-                    <td className="p-2">{new Date(r.start_date).toLocaleDateString()}</td>
-                    <td className="p-2">{new Date(r.end_date).toLocaleDateString()}</td>
+                    <td className="p-2">{fmtDate(pick(r, ["start_date","startDate","start"]))}</td>
+                    <td className="p-2">{fmtDate(pick(r, ["end_date","endDate","end"]))}</td>
                     <td className="p-2 capitalize">{r.status ?? "pending"}</td>
                     <td className="p-2 flex gap-2">
                       <button
