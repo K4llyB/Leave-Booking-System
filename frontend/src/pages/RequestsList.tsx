@@ -80,39 +80,41 @@ export default function RequestsList() {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-2 text-left">ID</th>
-              <th className="p-2 text-left">Start</th>
-              <th className="p-2 text-left">End</th>
-              <th className="p-2 text-left">Status</th>
-              <th className="p-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(r => (
-              <tr key={r.id} className="border-t">
-                <td className="p-2">{r.id}</td>
-                <td className="p-2">{new Date(r.start_date).toLocaleDateString()}</td>
-                <td className="p-2">{new Date(r.end_date).toLocaleDateString()}</td>
-                <td className="p-2">{r.status ?? "pending"}</td>
-                <td className="p-2">
-                  {(!r.status || r.status.toLowerCase() !== "approved") && (
-                    <button
-                      className="px-2 py-1 rounded bg-gray-200"
-                      onClick={() => cancel(r.id, r.employee_id)}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+  <div className="overflow-x-auto">
+    <table className="min-w-full text-sm">
+      <thead className="bg-gray-50 text-gray-700">
+        <tr>
+          <th className="p-2 text-left">ID</th>
+          <th className="p-2 text-left">Start</th>
+          <th className="p-2 text-left">End</th>
+          <th className="p-2 text-left">Status</th>
+          <th className="p-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(r => (
+          <tr key={r.id} className="odd:bg-white even:bg-gray-50 border-t">
+            <td className="p-2">{r.id}</td>
+            <td className="p-2">{new Date(r.start_date).toLocaleDateString()}</td>
+            <td className="p-2">{new Date(r.end_date).toLocaleDateString()}</td>
+            <td className="p-2">{r.status ?? "pending"}</td>
+            <td className="p-2">
+              {(!r.status || r.status.toLowerCase() !== "approved") && (
+                <button
+                  className="px-2 py-1 rounded bg-gray-200 text-[var(--bt-ink)] hover:bg-gray-300"
+                  onClick={() => cancel(r.id, r.employee_id)}
+                >
+                  Cancel
+                </button>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
     </div>
   );
 }
