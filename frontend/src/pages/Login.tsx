@@ -34,19 +34,39 @@ useEffect(() => { if (expired) sessionStorage.removeItem("flash"); }, [expired])
         <form onSubmit={onSubmit} className="space-y-3" aria-describedby={err ? "login-error" : undefined}>
           <label className="block">
             <span className="block mb-1">Email</span>
-            <input type="email" required value={email} onChange={e=>setEmail(e.target.value)}
-              className="w-full border rounded p-2 bg-white text-[var(--bt-ink)]" />
+            <input
+  type="email"
+  name="email"
+  autoComplete="email"
+  required
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  className="w-full border rounded p-2 bg-white text-[var(--bt-ink)]"
+  data-cy="login-email"
+/>
           </label>
           <label className="block">
             <span className="block mb-1">Password</span>
-            <input type="password" required value={password} onChange={e=>setPassword(e.target.value)}
-              className="w-full border rounded p-2 bg-white text-[var(--bt-ink)]" />
+            <input
+  type="password"
+  name="current-password"
+  autoComplete="current-password"
+  required
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  className="w-full border rounded p-2 bg-white text-[var(--bt-ink)]"
+  data-cy="login-password"
+/>
           </label>
           {err && <div id="login-error" className="p-2 bg-red-50 border border-red-300 rounded text-red-800">{err}</div>}
-          <button disabled={loading}
-            className="px-4 py-2 rounded bg-[var(--bt-blue)] text-white hover:opacity-90 focus:opacity-90 disabled:opacity-50">
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
+         <button
+  type="submit"
+  disabled={loading}
+  className="px-4 py-2 rounded bg-[var(--bt-blue)] text-white hover:opacity-90 focus:opacity-90 disabled:opacity-50"
+  data-cy="login-submit"
+>
+  {loading ? "Signing in..." : "Sign in"}
+</button>
         </form>
       </div>
     </div>

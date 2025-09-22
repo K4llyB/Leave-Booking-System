@@ -95,7 +95,10 @@ export default function RequestForm() {
           <label className="block">
             <span className="block mb-1">Start date</span>
             <input
+              id="start"
+              name="start"
               type="date"
+              data-cy="start" 
               required
               min={todayISO}
               value={start}
@@ -114,6 +117,9 @@ export default function RequestForm() {
             <span className="block mb-1">End date</span>
             <input
               type="date"
+              id="end"
+              name="end"
+              data-cy="end"
               required
               min={start || todayISO}
               value={end}
@@ -131,6 +137,8 @@ export default function RequestForm() {
           <label className="block">
             <span className="block mb-1">Reason <span className="text-gray-500">(optional)</span></span>
             <textarea
+              name ="reason"
+              data-cy="reason"
               value={reason}
               onChange={(ev) => { setReason(ev.target.value); clearErr("reason"); }}
               maxLength={300}
@@ -148,6 +156,7 @@ export default function RequestForm() {
           <div className="pt-2">
             <button
               type="submit"
+              data-cy="submit-request"
               disabled={loading}
               className="px-4 py-2 rounded bg-[var(--bt-blue)] text-white hover:opacity-90 disabled:opacity-50"
             >
